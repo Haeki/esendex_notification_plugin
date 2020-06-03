@@ -81,7 +81,7 @@ def get_text(context):
         message += " Custom Notification"
         message += " " + context['NOTIFICATIONCOMMENT']
 
-    return text if len(text) < max_len else text[:max_len]
+    return message if len(message) < max_len else message[:max_len]
 
 def send_sms(user_name, api_password, account_reference, text, context):
     api_key = base64.b64encode(("{}:{}".format(user_name, api_password).encode()))
