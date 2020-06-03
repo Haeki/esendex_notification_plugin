@@ -21,6 +21,7 @@ import json
 import os
 import sys
 import base64
+import re
     
 api_url = "https://api.esendex.com/v1.0/messagedispatcher"
 
@@ -51,8 +52,10 @@ def get_text(context):
     if context['WHAT'] == 'SERVICE':
         if notification_type in [ "PROBLEM", "RECOVERY" ]:
             message += context['SERVICESHORTSTATE'] + " "
-            message += context['SERVICEDESC'] + " "
-            message += context['SERVICEOUTPUT']
+            message += context['SERVICEDESC'] + ": "
+            rep = ["WARN - ", "CRIT - "]
+            pattern = re.compile("|".join(rep))
+            message += pattern.sub(lambda m: "", context['SERVICEOUTPUT'])           
         else:
             message += context['SERVICEDESC']
 
