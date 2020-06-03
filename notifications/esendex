@@ -99,10 +99,10 @@ def send_sms(user_name, api_password, account_reference, text, context):
     sys.stdout.write("Sending sms to {} with message: '{}'\n".format(context['CONTACTPAGER'].replace(" ", ""), text))
     resp = requests.post(api_url, headers=headers, data=json.dumps(data))
     if resp.status_code == 200:
-        sys.stdout.write("SMS sucessfully sent")
+        sys.stdout.write("SMS sucessfully sent\n")
         return 0
     else:
-        sys.stderr.write("Status Code: {}".format(resp.status_code))
+        sys.stderr.write("Status Code: {}\n".format(resp.status_code))
         return 2
     return 0
 
