@@ -93,15 +93,8 @@ def send_sms(user_name, api_password, account_reference, text, context):
             "body":text
         }]
     }
-    sys.stdout.write("{}, {}, {}, {}".format(user_name, api_password, account_reference, text))
-    #sys.stdout.write("\n".join(context))
-    f = open(context["OMD_ROOT"] + "/tmp/essendex.out", "a")
-    f.write("{}, {}, {}\n {} - {} \n {}\n\n".format(user_name, api_password, account_reference, headers, data, text))
-
-    f.write("Sending API Post request\n")
+    sys.stdout.write("Sending sms to {} with message: '{}'\n".format(context['CONTACTPAGER'].replace(" ", ""), text))
     resp = requests.post(api_url, headers=headers, data=json.dumps(data))
-    f.write("Got resqest status: {}".format(resp.status_code))
-    f.close()
     if resp.status_code == 200:
         sys.stdout.write("SMS sucessfully sent")
         return 0
