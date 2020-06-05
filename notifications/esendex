@@ -58,7 +58,6 @@ def get_text(context):
             message += pattern.sub(lambda m: "", context['SERVICEOUTPUT'])           
         else:
             message += context['SERVICEDESC']
-
     else:
         if notification_type in [ "PROBLEM", "RECOVERY" ]:
             message += "is " + context['HOSTSTATE']
@@ -70,20 +69,17 @@ def get_text(context):
             message += " Started Flapping"
         else:
             message += " Stopped Flapping"
-
     elif notification_type.startswith("DOWNTIME"):
         what = notification_type[8:].title()
         message += " Downtime " + what
         message += " " + context['NOTIFICATIONCOMMENT']
-
     elif notification_type == "ACKNOWLEDGEMENT":
         message += " Acknowledged"
         message += " " + context['NOTIFICATIONCOMMENT']
-
     elif notification_type == "CUSTOM":
         message += " Custom Notification"
         message += " " + context['NOTIFICATIONCOMMENT']
-
+        
     return message if len(message) < max_len else message[:max_len]
 
 def send_sms(user_name, api_password, account_reference, text, context):
@@ -96,7 +92,9 @@ def send_sms(user_name, api_password, account_reference, text, context):
             "body":text
         }]
     }
-    sys.stdout.write("Sending sms to {} with message: '{}'\n".format(context['CONTACTPAGER'].replace(" ", ""), text))
+    sys.stdout.write(u"Sending sms to {} with message: '{}'\n".format(
+        context['CONTACTPAGER'].replace(" ", ""), 
+        text.encode('ascii', 'ignore')))
     resp = requests.post(api_url, headers=headers, data=json.dumps(data))
     if resp.status_code == 200:
         sys.stdout.write("SMS sucessfully sent\n")
