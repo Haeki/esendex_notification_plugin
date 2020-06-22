@@ -44,7 +44,11 @@ def main():
 
 def get_text(context):
     max_len = 160
-    message = context['HOSTNAME'] + " "
+    if "PARAMETER_SMS_HEADER" in context:
+        message = "[" + context["PARAMETER_SMS_HEADER"] + "] "
+    else:
+        message = ""
+    message += context['HOSTNAME'] + " "
 
     notification_type = context["NOTIFICATIONTYPE"]
 

@@ -16,7 +16,7 @@
 # Boston, MA 02110-1301 USA.
 
 register_notification_parameters("esendex", Dictionary(
-    optional_keys = ['originator'],
+    optional_keys = ['sms_header'],
     elements = [
         ("user_name", TextAscii(
             title = _("User Name"),
@@ -35,6 +35,12 @@ register_notification_parameters("esendex", Dictionary(
         ("account_reference", TextAscii(
             title = _("Account Reference"),
             help = _("You need to provide your essendex Account Reference"),
+            size = 40,
+            allow_empty = False,
+        )),
+        ("sms_header", TextAscii(
+            title = _("SMS Header"),
+            help = _("Header send with each SMS"),
             size = 40,
             allow_empty = False,
         )),
