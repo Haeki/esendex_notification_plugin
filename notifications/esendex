@@ -2,7 +2,7 @@
 # SMS via esendex.com
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 
-# (c) 2020 Nagarro Allgeier ES GmbH 
+# (c) 2020 Nagarro Allgeier ES GmbH
 #          Mika Busch <mika.busch@allgeier-es.com>
 
 # This is free software;  you can redistribute it and/or modify it
@@ -22,7 +22,7 @@ import os
 import sys
 import base64
 import re
-    
+
 api_url = "https://api.esendex.com/v1.0/messagedispatcher"
 
 def main():
@@ -55,7 +55,7 @@ def get_text(context):
             message += context['SERVICEDESC'] + ": "
             rep = ["WARN - ", "CRIT - "]
             pattern = re.compile("|".join(rep))
-            message += pattern.sub(lambda m: "", context['SERVICEOUTPUT'])           
+            message += pattern.sub(lambda m: "", context['SERVICEOUTPUT'])
         else:
             message += context['SERVICEDESC']
     else:
@@ -79,13 +79,13 @@ def get_text(context):
     elif notification_type == "CUSTOM":
         message += " Custom Notification"
         message += " " + context['NOTIFICATIONCOMMENT']
-        
+
     return message if len(message) < max_len else message[:max_len]
 
 def send_sms(user_name, api_password, account_reference, text, context):
     api_key = base64.b64encode(("{}:{}".format(user_name, api_password).encode()))
     headers = {'Authorization': 'Basic {}'.format(api_key.decode()), "Content-Type": "application/json", "Accept": "application/json"}
-    data = {   
+    data = {
         "accountreference":account_reference,
         "messages":[{
             "to":context['CONTACTPAGER'].replace(" ", ""),
@@ -93,7 +93,7 @@ def send_sms(user_name, api_password, account_reference, text, context):
         }]
     }
     sys.stdout.write(u"Sending sms to {} with message: '{}'\n".format(
-        context['CONTACTPAGER'].replace(" ", ""), 
+        context['CONTACTPAGER'].replace(" ", ""),
         text.encode('ascii', 'ignore')))
     resp = requests.post(api_url, headers=headers, data=json.dumps(data))
     if resp.status_code == 200:
