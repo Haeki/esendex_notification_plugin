@@ -44,5 +44,12 @@ register_notification_parameters("esendex", Dictionary(
             size=40,
             allow_empty=False,
         )),
+        ("max_lenght", Integer(
+            title=_("Max Message Lenght"),
+            help=_("Maximum Number of Characters bevor Message gets cut off"),
+            size=40,
+            allow_empty=False,
+            default_value=160,
+        )),
     ]
 ))
