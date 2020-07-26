@@ -39,6 +39,30 @@ def main():
     api_password = context["PARAMETER_API_PASSWORD"]
     user_name = context["PARAMETER_USER_NAME"]
     account_reference = context["PARAMETER_ACCOUNT_REFERENCE"]
+# Text for the other States
+def get_otherState_Text(notificationType, comment=None):
+    message = " "
+    if notificationType.startswith("FLAP"):
+        if "START" in notificationType:
+            message += "Started Flapping"
+        else:
+            message += "Stopped Flapping"
+    elif notificationType.startswith("DOWNTIME"):
+        what = notificationType[8:].title()
+        message += "Downtime " + what
+        if comment is not None:
+            message += ": " + comment
+    elif notificationType == "ACKNOWLEDGEMENT":
+        message += "Acknowledged"
+        if comment is not None:
+            message += ": " + comment
+    elif notificationType == "CUSTOM":
+        message += "Custom Notification"
+        if comment is not None:
+            message += ": " + comment
+    return message
+
+
 
     return send_sms(user_name, api_password, account_reference, text, context)
 
@@ -66,24 +90,7 @@ def get_text(context):
         if notification_type in [ "PROBLEM", "RECOVERY" ]:
             message += "is " + context['HOSTSTATE']
             message += ": " + context['HOSTOUTPUT']
-
-    # Ouput the other State
-    if notification_type.startswith("FLAP"):
-        if "START" in notification_type:
-            message += " Started Flapping"
-        else:
-            message += " Stopped Flapping"
-    elif notification_type.startswith("DOWNTIME"):
-        what = notification_type[8:].title()
-        message += " Downtime " + what
-        message += " " + context['NOTIFICATIONCOMMENT']
-    elif notification_type == "ACKNOWLEDGEMENT":
-        message += " Acknowledged"
-        message += " " + context['NOTIFICATIONCOMMENT']
-    elif notification_type == "CUSTOM":
-        message += " Custom Notification"
-        message += " " + context['NOTIFICATIONCOMMENT']
-
+    message += get_otherState_Text(notification_type, context['NOTIFICATIONCOMMENT'])
     return message if len(message) < max_len else message[:max_len]
 
 def send_sms(user_name, api_password, account_reference, text, context):
