@@ -71,7 +71,7 @@ def get_text(context):
         message = "[" + context["PARAMETER_SMS_HEADER"] + "]\n"
     else:
         message = ""
-    message += context['HOSTNAME'] + " "
+    message += context['HOSTNAME'] + "\n"
 
     notification_type = context["NOTIFICATIONTYPE"]
 
@@ -80,13 +80,13 @@ def get_text(context):
         if notification_type in ["PROBLEM", "RECOVERY"]:
             message += context['SERVICESHORTSTATE'] + " "
             message += context['SERVICEDESC'] + ": "
-            rep = ["WARN - ", "CRIT - "]
+            rep = ["WARN - ", "CRIT - ", "OK - "]
             pattern = re.compile("|".join(rep))
             message += pattern.sub(lambda m: "", context['SERVICEOUTPUT'])
         else:
             message += context['SERVICEDESC']
     else:
-        if notification_type in [ "PROBLEM", "RECOVERY" ]:
+        if notification_type in ["PROBLEM", "RECOVERY"]:
             message += "is " + context['HOSTSTATE']
             message += ": " + context['HOSTOUTPUT']
     message += get_otherState_Text(notification_type, context['NOTIFICATIONCOMMENT'])
