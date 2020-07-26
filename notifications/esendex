@@ -67,9 +67,8 @@ def get_otherState_Text(notificationType, comment=None):
     return send_sms(user_name, api_password, account_reference, text, context)
 
 def get_text(context):
-    max_len = 160
     if "PARAMETER_SMS_HEADER" in context:
-        message = "[" + context["PARAMETER_SMS_HEADER"] + "] "
+        message = "[" + context["PARAMETER_SMS_HEADER"] + "]\n"
     else:
         message = ""
     message += context['HOSTNAME'] + " "
@@ -78,7 +77,7 @@ def get_text(context):
 
     # Prepare Default information and Type PROBLEM, RECOVERY
     if context['WHAT'] == 'SERVICE':
-        if notification_type in [ "PROBLEM", "RECOVERY" ]:
+        if notification_type in ["PROBLEM", "RECOVERY"]:
             message += context['SERVICESHORTSTATE'] + " "
             message += context['SERVICEDESC'] + ": "
             rep = ["WARN - ", "CRIT - "]
