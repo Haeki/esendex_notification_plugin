@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # SMS via esendex.com
+# Bulk: yes
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 
 # (c) 2020 Nagarro Allgeier ES GmbH
@@ -24,21 +25,80 @@ import base64
 import re
 
 api_url = "https://api.esendex.com/v1.0/messagedispatcher"
+opt_debug = '-d' in sys.argv
+bulk_mode = '--bulk' in sys.argv
+max_len = 160
+
+
+def read_bulk_contexts():
+    parameters = {}
+    contexts = []
+    in_params = True
+
+    # First comes a section with global variables
+    for line in sys.stdin:
+        line = line.strip()
+        if line:
+            try:
+                key, value = line.split("=", 1)
+                value = value.replace("\1", "\n")
+            except:
+                sys.stderr.write("Invalid line in bulked notification context: " + line)
+                continue
+
+            if in_params:
+                parameters[key] = value
+            else:
+                context[key] = value
+
+        else:
+            in_params = False
+            context = {}
+            contexts.append(context)
+
+    return parameters, contexts
+
 
 def main():
-    context = dict([ (var[7:], value.decode("utf-8"))
-                      for (var, value) in os.environ.items()
-                      if var.startswith("NOTIFY_")])
+    global max_len
+    if bulk_mode:
+        parameters, contexts = read_bulk_contexts()
+        api_password = parameters["PARAMETER_API_PASSWORD"]
+        user_name = parameters["PARAMETER_USER_NAME"]
+        account_reference = parameters["PARAMETER_ACCOUNT_REFERENCE"]
+        if "PARAMETER_MAX_LENGHT" in parameters:
+            max_len = int(parameters["PARAMETER_MAX_LENGHT"])
+        contact_numbers = set()
+        for context in contexts:
+            contact_number = context["CONTACTPAGER"].replace(" ", "")
+            if len(contact_number) >= 0:
+                contact_numbers.add(contact_number)
+        if len(contact_numbers) == 0:
+            sys.stderr.write("Contact's pager addresses are all empty, not sending anything.\n")
+            return 2
+        if "PARAMETER_SMS_HEADER" in parameters:
+            text = get_bulk_text(contexts, parameters["PARAMETER_SMS_HEADER"])
+        else:
+            text = get_bulk_text(contexts)
+    else:
+        context = dict([(var[7:], value.decode("utf-8"))
+                        for (var, value) in os.environ.items()
+                        if var.startswith("NOTIFY_")])
+        contact_number = context["CONTACTPAGER"].replace(" ", "")
+        if contact_number == "":
+            sys.stderr.write("Contact's pager address is empty, not sending anything.\n")
+            return 2
+        if "PARAMETER_MAX_LENGHT" in context:
+            max_len = parameters["PARAMETER_MAX_LENGHT"]
+        contact_numbers = [contact_number]
+        api_password = context["PARAMETER_API_PASSWORD"]
+        user_name = context["PARAMETER_USER_NAME"]
+        account_reference = context["PARAMETER_ACCOUNT_REFERENCE"]
+        text = get_text(context)
 
-    if context['CONTACTPAGER'] == "":
-        sys.stderr.write("Contact's pager address is empty, not sending anything.\n")
-        return 2
+    return send_sms(user_name, api_password, account_reference, text, contact_numbers)
 
-    text = get_text(context)
 
-    api_password = context["PARAMETER_API_PASSWORD"]
-    user_name = context["PARAMETER_USER_NAME"]
-    account_reference = context["PARAMETER_ACCOUNT_REFERENCE"]
 # Text for the other States
 def get_otherState_Text(notificationType, comment=None):
     message = " "
@@ -63,8 +123,102 @@ def get_otherState_Text(notificationType, comment=None):
     return message
 
 
+def log_debug(text):
+    if opt_debug:
+        sys.stdout.write(text)
 
-    return send_sms(user_name, api_password, account_reference, text, context)
+
+def get_bulk_text(contexts, smsHeader=None):
+    message = "[" + smsHeader + "]\n" if smsHeader else ""
+    hosts = {}
+    for context in contexts:
+        hostName = context["HOSTNAME"]
+        if hostName not in hosts:
+            hosts[hostName] = {"services": {}, "alerts": {}}
+        host = hosts[hostName]
+        if context["WHAT"] == "SERVICE":
+            serviceDesc = context["SERVICEDESC"]
+            if serviceDesc in host["services"]:
+                log_debug("Service " + serviceDesc + " already present comparing\n")
+                if context["MICROTIME"] < host["services"][serviceDesc]["time"]:
+                    log_debug("Service is older skipping\n")
+                    continue
+            host["services"][serviceDesc] = {
+                "time": context["MICROTIME"],
+                "output": context["SERVICEOUTPUT"],
+                "state": context['SERVICESHORTSTATE'],
+                "stateID": context["SERVICESTATEID"],
+                "lastState": context["LASTSERVICESHORTSTATE"],
+                "displayName": context["SERVICEDISPLAYNAME"],
+                "notificationType": context["NOTIFICATIONTYPE"],
+                "comment": context['NOTIFICATIONCOMMENT'],
+                "what": context["WHAT"]
+            }
+        elif context["WHAT"] == "HOST":
+            notificationType = context["NOTIFICATIONTYPE"]
+            if notificationType in host["alerts"]:
+                if opt_debug:
+                log_debug("Alert Type " + notificationType + " already present comparing\n")
+                if context["MICROTIME"] < host["alerts"][notificationType]["time"]:
+                    sys.stdout.write("Host Alert is older skipping\n")
+                    continue
+            host["alerts"][notificationType] = {
+                "time": context["MICROTIME"],
+                "state": context["HOSTSHORTSTATE"],
+                "comment": context['NOTIFICATIONCOMMENT']
+                }
+    log_debug(str(hosts)+"\n")
+    for hostName, host in hosts.items():
+        message += hostName
+        if "PROBLEM" in host["alerts"] and "RECOVERY" in host["alerts"]:
+            if host["alerts"]["PROBLEM"]["time"] < host["alerts"]["RECOVERY"]["time"]:
+                message += " went " + host["alerts"]["PROBLEM"]["state"]
+                message += " and " + host["alerts"]["RECOVERY"]["state"] + " again\n"
+            else:
+                message += " went " + host["alerts"]["RECOVERY"]["state"]
+                message += " and " + host["alerts"]["PROBLEM"]["state"] + " again\n"
+        elif "PROBLEM" in host["alerts"]:
+            message += " went " + host["alerts"]["PROBLEM"]["state"] + "\n"
+        elif "RECOVERY" in host["alerts"]:
+            message += " went " + host["alerts"]["RECOVERY"]["state"] + "\n"
+        for notificationType, alert in host["alerts"].items():
+            if notificationType not in ["PROBLEM", "RECOVERY"]:
+                message += get_otherState_Text(notificationType, alert["comment"])
+                message += "\n"
+
+        notificationTypes = {}
+        for serviceDesc in host["services"]:
+            serviceNotificationType = host["services"][serviceDesc]["notificationType"]
+            if serviceNotificationType in notificationTypes:
+                notificationTypes[serviceNotificationType].append(serviceDesc)
+            else:
+                notificationTypes[serviceNotificationType] = [serviceDesc]
+        serviceOutput = bool(len(hosts) <= 1 and len(host["services"]) < 3)
+
+        for notificationType in ["PROBLEM", "RECOVERY"]:
+            if notificationType in notificationTypes:
+                services = notificationTypes.pop(notificationType)
+                message += " service {}:\n".format(notificationType.lower())
+                for serviceDesc in services:
+                    service = host["services"][serviceDesc]
+                    message += service["state"] + "-"
+                    message += serviceDesc
+                    if serviceOutput:
+                        message += ": "
+                        rep = ["WARN - ", "CRIT - ", "OK - "]
+                        pattern = re.compile("|".join(rep))
+                        message += pattern.sub(lambda m: "", service["output"])
+                    message += ";\n"
+        for notificationType, services in notificationTypes.items():
+            message += " service {}:\n".format(
+                get_otherState_Text(notificationType))
+            for serviceDesc in services:
+                message += serviceDesc
+                message += ";\n"
+    asciiMessage = message.decode("ascii", errors="ignore")
+    log_debug(asciiMessage+"\n")
+    return message if len(message) < max_len else (message[:max_len-4] + "...")
+
 
 def get_text(context):
     if "PARAMETER_SMS_HEADER" in context:
