@@ -92,19 +92,23 @@ def get_text(context):
     message += get_otherState_Text(notification_type, context['NOTIFICATIONCOMMENT'])
     return message if len(message) < max_len else message[:max_len]
 
-def send_sms(user_name, api_password, account_reference, text, context):
+
+def send_sms(user_name, api_password, account_reference, text, contact_numbers):
     api_key = base64.b64encode(("{}:{}".format(user_name, api_password).encode()))
     headers = {'Authorization': 'Basic {}'.format(api_key.decode()), "Content-Type": "application/json", "Accept": "application/json"}
+    messages = []
+    for contact_number in contact_numbers:
+        messages.append({
+            "to": contact_number,
+            "body": text
+        })
     data = {
-        "accountreference":account_reference,
-        "messages":[{
-            "to":context['CONTACTPAGER'].replace(" ", ""),
-            "body":text
-        }]
+        "accountreference": account_reference,
+        "messages": messages
     }
-    sys.stdout.write(u"Sending sms to {} with message: '{}'\n".format(
-        context['CONTACTPAGER'].replace(" ", ""),
-        text.encode('ascii', 'ignore')))
+    sys.stdout.write("Sending sms to {} with message: '{}'\n".format(
+        ', '.join(contact_numbers),
+        text.decode('ascii', 'ignore')))
     resp = requests.post(api_url, headers=headers, data=json.dumps(data))
     if resp.status_code == 200:
         sys.stdout.write("SMS sucessfully sent\n")
