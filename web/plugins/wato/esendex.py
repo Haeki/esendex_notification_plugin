@@ -2,7 +2,7 @@
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 
 # (c) 2020 Nagarro Allgeier ES GmbH
-#          Mika Busch <mika.busch@allgeier-es.com>
+#          Mika Busch <mika.busch@nagarro-es.com>
 
 # This is free software;  you can redistribute it and/or modify it
 # under the  terms of the  GNU General Public License  as published by
