@@ -28,6 +28,7 @@ api_url = "https://api.esendex.com/v1.0/messagedispatcher"
 opt_debug = '-d' in sys.argv
 bulk_mode = '--bulk' in sys.argv
 max_len = 160
+sub_pattern = "WARN - |CRIT - |OK - "
 
 
 def read_bulk_contexts():
@@ -61,6 +62,7 @@ def read_bulk_contexts():
 
 def main():
     global max_len
+    global sub_pattern
     if bulk_mode:
         parameters, contexts = read_bulk_contexts()
         api_password = parameters["PARAMETER_API_PASSWORD"]
@@ -68,6 +70,8 @@ def main():
         account_reference = parameters["PARAMETER_ACCOUNT_REFERENCE"]
         if "PARAMETER_MAX_LENGHT" in parameters:
             max_len = int(parameters["PARAMETER_MAX_LENGHT"])
+        if "PARAMETER_SUB_PATTERN" in parameters:
+            sub_pattern = parameters["PARAMETER_SUB_PATTERN"]
         contact_numbers = set()
         for context in contexts:
             contact_number = context["CONTACTPAGER"].replace(" ", "")
@@ -89,12 +93,17 @@ def main():
             sys.stderr.write("Contact's pager address is empty, not sending anything.\n")
             return 2
         if "PARAMETER_MAX_LENGHT" in context:
-            max_len = parameters["PARAMETER_MAX_LENGHT"]
+            max_len = context["PARAMETER_MAX_LENGHT"]
+        if "PARAMETER_SUB_PATTERN" in context:
+            sub_pattern = context["PARAMETER_SUB_PATTERN"]
         contact_numbers = [contact_number]
         api_password = context["PARAMETER_API_PASSWORD"]
         user_name = context["PARAMETER_USER_NAME"]
         account_reference = context["PARAMETER_ACCOUNT_REFERENCE"]
-        text = get_text(context)
+        if "PARAMETER_SMS_HEADER" in context:
+            text = get_text(context, context["PARAMETER_SMS_HEADER"])
+        else:
+            text = get_text(context)
 
     return send_sms(user_name, api_password, account_reference, text, contact_numbers)
 
@@ -213,8 +222,7 @@ def get_bulk_text(contexts, smsHeader=None):
     space_left = max_len - len(message)
     space_per_service = int(space_left/len(service_outputs))
     if space_per_service > 5:
-        rep = ["WARN - ", "CRIT - ", "OK - ", " MAC:.*"]
-        pattern = re.compile("|".join(rep))
+        pattern = re.compile(sub_pattern)
         service_outputs = [formatOutput(output, pattern, space_per_service) for output in service_outputs]
         message = message.format(*service_outputs)
     else:
@@ -228,11 +236,8 @@ def formatOutput(inputStr, pattern, lenght):
     output = ": " + output
     return output if len(output) < lenght else (output[:lenght-2] + "..")
 
-def get_text(context):
-    if "PARAMETER_SMS_HEADER" in context:
-        message = "[" + context["PARAMETER_SMS_HEADER"] + "]\n"
-    else:
-        message = ""
+def get_text(context, smsHeader=None):
+    message = "[" + smsHeader + "]\n" if smsHeader else ""
     message += context['HOSTNAME'] + "\n"
 
     notification_type = context["NOTIFICATIONTYPE"]
@@ -242,8 +247,7 @@ def get_text(context):
         if notification_type in ["PROBLEM", "RECOVERY"]:
             message += context['SERVICESHORTSTATE'] + " "
             message += context['SERVICEDESC'] + ": "
-            rep = ["WARN - ", "CRIT - ", "OK - "]
-            pattern = re.compile("|".join(rep))
+            pattern = re.compile(sub_pattern)
             message += pattern.sub(lambda m: "", context['SERVICEOUTPUT'])
         else:
             message += context['SERVICEDESC']

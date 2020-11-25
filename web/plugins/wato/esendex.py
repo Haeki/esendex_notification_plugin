@@ -16,7 +16,7 @@
 # Boston, MA 02110-1301 USA.
 
 register_notification_parameters("esendex", Dictionary(
-    optional_keys=['sms_header', 'max_lenght'],
+    optional_keys=['sms_header', 'max_lenght', 'sub_pattern'],
     elements=[
         ("user_name", TextAscii(
             title=_("User Name"),
@@ -43,6 +43,13 @@ register_notification_parameters("esendex", Dictionary(
             help=_("Header send with each SMS"),
             size=40,
             allow_empty=False,
+        )),
+        ("sub_pattern", TextAscii(
+            title=_("Service output sub pattern"),
+            help=_("Regexpattern that gets removed from the service output"),
+            size=40,
+            allow_empty=False,
+            default_value="WARN - |CRIT - |OK - ",
         )),
         ("max_lenght", Integer(
             title=_("Max Message Lenght"),
