@@ -219,8 +219,7 @@ def get_bulk_text(contexts, smsHeader=None):
             for serviceDesc in services:
                 message += "  %s;\n" % serviceDesc
     message = message.rstrip()
-    space_left = max_len - len(message)
-    space_per_service = int(space_left/len(service_outputs))
+    space_per_service = calc_space_per_service(len(message), service_outputs)
     if space_per_service > 10:
         pattern = re.compile(sub_pattern)
         service_outputs = [formatOutput(output, pattern, space_per_service) for output in service_outputs]
@@ -231,10 +230,23 @@ def get_bulk_text(contexts, smsHeader=None):
     log_debug(asciiMessage+"\n")
     return message if len(message) < max_len else (message[:max_len])
 
+def calc_space_per_service(messageLenght, service_outputs):
+    space_left = max_len - messageLenght
+    space_per_service = int(space_left/len(service_outputs))
+    bonus_space = 0
+    bonus_needed = 0
+    for val in service_outputs:
+        if len(val) < space_per_service:
+            bonus_space += space_per_service - (len(val) + 4)
+        elif len(val) > space_per_service:
+            bonus_needed += 1
+    space_per_service = space_per_service + int(bonus_space/bonus_needed)
+    return space_per_service
+
 def formatOutput(inputStr, pattern, lenght):
     output = pattern.sub(lambda m: "", inputStr)
     output = ":\n  " + output
-    return output if len(output) < lenght else (output[:lenght-2] + "..")
+    return output if len(output) < lenght else output[:lenght]
 
 def get_text(context, smsHeader=None):
     message = "[" + smsHeader + "]\n" if smsHeader else ""
