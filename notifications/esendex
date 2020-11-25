@@ -209,7 +209,7 @@ def get_bulk_text(contexts, smsHeader=None):
                 message += " service {}:\n".format(notificationType.lower())
                 for serviceDesc in services:
                     service = host["services"][serviceDesc]
-                    message += service["state"] + "-"
+                    message += " %s- " % service["state"]
                     message += serviceDesc
                     message += "{};\n"
                     service_outputs.append(service["output"])
@@ -217,11 +217,11 @@ def get_bulk_text(contexts, smsHeader=None):
             message += " service {}:\n".format(
                 get_otherState_Text(notificationType))
             for serviceDesc in services:
-                message += serviceDesc
-                message += ";\n"
+                message += "  %s;\n" % serviceDesc
+    message = message.rstrip()
     space_left = max_len - len(message)
     space_per_service = int(space_left/len(service_outputs))
-    if space_per_service > 5:
+    if space_per_service > 10:
         pattern = re.compile(sub_pattern)
         service_outputs = [formatOutput(output, pattern, space_per_service) for output in service_outputs]
         message = message.format(*service_outputs)
@@ -233,7 +233,7 @@ def get_bulk_text(contexts, smsHeader=None):
 
 def formatOutput(inputStr, pattern, lenght):
     output = pattern.sub(lambda m: "", inputStr)
-    output = ": " + output
+    output = ":\n  " + output
     return output if len(output) < lenght else (output[:lenght-2] + "..")
 
 def get_text(context, smsHeader=None):
@@ -255,7 +255,8 @@ def get_text(context, smsHeader=None):
         if notification_type in ["PROBLEM", "RECOVERY"]:
             message += "is " + context['HOSTSTATE']
             message += ": " + context['HOSTOUTPUT']
-    message += get_otherState_Text(notification_type, context['NOTIFICATIONCOMMENT'])
+        else:
+            message += get_otherState_Text(notification_type, context['NOTIFICATIONCOMMENT'])
     return message if len(message) < max_len else message[:max_len]
 
 
