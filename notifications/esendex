@@ -168,6 +168,7 @@ def get_bulk_text(contexts, smsHeader=None):
                 "comment": context['NOTIFICATIONCOMMENT']
                 }
     log_debug(str(hosts)+"\n")
+    service_outputs = []
     for hostName, host in hosts.items():
         message += hostName
         if "PROBLEM" in host["alerts"] and "RECOVERY" in host["alerts"]:
@@ -193,8 +194,6 @@ def get_bulk_text(contexts, smsHeader=None):
                 notificationTypes[serviceNotificationType].append(serviceDesc)
             else:
                 notificationTypes[serviceNotificationType] = [serviceDesc]
-        serviceOutput = bool(len(hosts) <= 1 and len(host["services"]) < 3)
-
         for notificationType in ["PROBLEM", "RECOVERY"]:
             if notificationType in notificationTypes:
                 services = notificationTypes.pop(notificationType)
@@ -203,22 +202,31 @@ def get_bulk_text(contexts, smsHeader=None):
                     service = host["services"][serviceDesc]
                     message += service["state"] + "-"
                     message += serviceDesc
-                    if serviceOutput:
-                        message += ": "
-                        rep = ["WARN - ", "CRIT - ", "OK - "]
-                        pattern = re.compile("|".join(rep))
-                        message += pattern.sub(lambda m: "", service["output"])
-                    message += ";\n"
+                    message += "{};\n"
+                    service_outputs.append(service["output"])
         for notificationType, services in notificationTypes.items():
             message += " service {}:\n".format(
                 get_otherState_Text(notificationType))
             for serviceDesc in services:
                 message += serviceDesc
                 message += ";\n"
+    space_left = max_len - len(message)
+    space_per_service = int(space_left/len(service_outputs))
+    if space_per_service > 5:
+        rep = ["WARN - ", "CRIT - ", "OK - ", " MAC:.*"]
+        pattern = re.compile("|".join(rep))
+        service_outputs = [formatOutput(output, pattern, space_per_service) for output in service_outputs]
+        message = message.format(*service_outputs)
+    else:
+        message = message.format(*[""]*len(service_outputs))
     asciiMessage = message.decode("ascii", errors="ignore")
     log_debug(asciiMessage+"\n")
-    return message if len(message) < max_len else (message[:max_len-4] + "...")
+    return message if len(message) < max_len else (message[:max_len])
 
+def formatOutput(inputStr, pattern, lenght):
+    output = pattern.sub(lambda m: "", inputStr)
+    output = ": " + output
+    return output if len(output) < lenght else (output[:lenght-2] + "..")
 
 def get_text(context):
     if "PARAMETER_SMS_HEADER" in context:
