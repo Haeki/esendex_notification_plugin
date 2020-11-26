@@ -240,7 +240,8 @@ def calc_space_per_service(messageLenght, service_outputs):
             bonus_space += space_per_service - (len(val) + 4)
         elif len(val) > space_per_service:
             bonus_needed += 1
-    space_per_service = space_per_service + int(bonus_space/bonus_needed)
+    if bonus_needed > 0:
+        space_per_service = space_per_service + int(bonus_space/bonus_needed)
     return space_per_service
 
 def formatOutput(inputStr, pattern, lenght):
