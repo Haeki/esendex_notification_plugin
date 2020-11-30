@@ -219,13 +219,14 @@ def get_bulk_text(contexts, smsHeader=None):
             for serviceDesc in services:
                 message += "  %s;\n" % serviceDesc
     message = message.rstrip()
-    space_per_service = calc_space_per_service(len(message), service_outputs)
-    if space_per_service > 10:
-        pattern = re.compile(sub_pattern)
-        service_outputs = [formatOutput(output, pattern, space_per_service) for output in service_outputs]
-        message = message.format(*service_outputs)
-    else:
-        message = message.format(*[""]*len(service_outputs))
+    if len(service_outputs) > 0:
+        space_per_service = calc_space_per_service(len(message), service_outputs)
+        if space_per_service > 10:
+            pattern = re.compile(sub_pattern)
+            service_outputs = [formatOutput(output, pattern, space_per_service) for output in service_outputs]
+            message = message.format(*service_outputs)
+        else:
+            message = message.format(*[""]*len(service_outputs))
     asciiMessage = message.decode("ascii", errors="ignore")
     log_debug(asciiMessage+"\n")
     return message if len(message) < max_len else (message[:max_len])
