@@ -27,33 +27,33 @@ register_notification_parameters("esendex", Dictionary(
         ("api_password", TextAscii(
             title=_("API Password"),
             help=_("You need to provide a valid API passowrd to be able to send notifications "
-                   "If you don't yet have an API password, you can log in and generate one on your"
+                   "If you don't have an API password yet, you can log in and generate one on your "
                    "<a href=\"https://www.esendex.com/profile\">user profile</a>"),
             size=40,
             allow_empty=False,
         )),
         ("account_reference", TextAscii(
             title=_("Account Reference"),
-            help=_("You need to provide your essendex Account Reference"),
+            help=_("You need to provide your essendex account reference"),
             size=40,
             allow_empty=False,
         )),
         ("sms_header", TextAscii(
             title=_("SMS Header"),
-            help=_("Header send with each SMS"),
+            help=_("Header added to the start of each SMS"),
             size=40,
             allow_empty=False,
         )),
         ("sub_pattern", TextAscii(
             title=_("Service output sub pattern"),
-            help=_("Regexpattern that gets removed from the service output"),
+            help=_("(Regexpattern) Matches get removed from the service output"),
             size=40,
             allow_empty=False,
             default_value="WARN - |CRIT - |OK - ",
         )),
         ("max_lenght", Integer(
             title=_("Max Message Lenght"),
-            help=_("Maximum Number of Characters bevor Message gets cut off"),
+            help=_("Maximum number of characters bevor message gets cut off"),
             size=40,
             allow_empty=False,
             default_value=160,
