@@ -52,7 +52,7 @@ register_notification_parameters("esendex", Dictionary(
             default_value="WARN - |CRIT - |OK - ",
         )),
         ("max_lenght", Integer(
-            title=_("Max Message Lenght"),
+            title=_("Max Message Length"),
             help=_("Maximum number of characters bevor message gets cut off"),
             size=40,
             allow_empty=False,
