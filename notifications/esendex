@@ -67,7 +67,7 @@ def main():
     global sub_pattern
     if bulk_mode:
         parameters, contexts = read_bulk_contexts()
-        api_password = parameters["PARAMETER_API_PASSWORD"]
+        api_token = parameters["PARAMETER_API_TOKEN"]
         user_name = parameters["PARAMETER_USER_NAME"]
         account_reference = parameters["PARAMETER_ACCOUNT_REFERENCE"]
         if "PARAMETER_MAX_LENGHT" in parameters:
@@ -99,7 +99,7 @@ def main():
         if "PARAMETER_SUB_PATTERN" in context:
             sub_pattern = context["PARAMETER_SUB_PATTERN"]
         contact_numbers = [contact_number]
-        api_password = context["PARAMETER_API_PASSWORD"]
+        api_token = context["PARAMETER_API_TOKEN"]
         user_name = context["PARAMETER_USER_NAME"]
         account_reference = context["PARAMETER_ACCOUNT_REFERENCE"]
         if "PARAMETER_SMS_HEADER" in context:
@@ -107,7 +107,7 @@ def main():
         else:
             text = get_text(context)
 
-    return send_sms(user_name, api_password, account_reference, text, contact_numbers)
+    return send_sms(user_name, api_token, account_reference, text, contact_numbers)
 
 
 # Text for the other States
@@ -276,8 +276,8 @@ def get_text(context, smsHeader=None):
     return message if len(message) < max_len else message[:max_len]
 
 
-def send_sms(user_name, api_password, account_reference, text, contact_numbers):
-    api_key = base64.b64encode(("{}:{}".format(user_name, api_password).encode()))
+def send_sms(user_name, api_token, account_reference, text, contact_numbers):
+    api_key = base64.b64encode(("{}:{}".format(user_name, api_token).encode()))
     headers = {'Authorization': 'Basic {}'.format(api_key.decode()), "Content-Type": "application/json", "Accept": "application/json"}
     messages = []
     for contact_number in contact_numbers:

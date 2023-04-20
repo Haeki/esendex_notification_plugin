@@ -25,10 +25,10 @@ register_notification_parameters("esendex", Dictionary(
             help=_("Esendex username"),
             size=40,
         )),
-        ("api_password", TextAscii(
-            title=_("API Password"),
-            help=_("You need to provide a valid API passowrd to be able to send notifications "
-                   "If you don't have an API password yet, you can log in and generate one on your "
+        ("api_token", TextAscii(
+            title=_("API Token"),
+            help=_("You need to provide a valid API token to be able to send notifications "
+                   "If you don't have an API token yet, you can log in and generate one on your "
                    "<a href=\"https://www.esendex.com/profile\">user profile</a>"),
             size=40,
         )),
