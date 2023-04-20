@@ -15,7 +15,7 @@
 # to the Free Software Foundation, Inc., 51 Franklin St,  Fifth Floor,
 # Boston, MA 02110-1301 USA.
 
-# Version 2.4 (2023-04-19)
+# Version 2.4.1 (2023-04-19)
 
 from cmk.gui.valuespec import (
     Dictionary,
