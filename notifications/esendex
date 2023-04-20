@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # SMS via esendex.com
 # Bulk: yes
 # -*- encoding: utf-8; py-indent-offset: 4 -*-
 
-# (c) 2020 Nagarro Allgeier ES GmbH
-#          Mika Busch <mika.busch@nagarro-es.com>
+# (c) 2022 Nagarro ES GmbH
+#          Mika Busch <mika.busch@nagarro.com>
 
 # This is free software;  you can redistribute it and/or modify it
 # under the  terms of the  GNU General Public License  as published by
@@ -16,6 +16,8 @@
 # License along with GNU Make; see the file  COPYING.  If  not,  write
 # to the Free Software Foundation, Inc., 51 Franklin St,  Fifth Floor,
 # Boston, MA 02110-1301 USA.
+
+# Version 2.3 (2023-04-19)
 
 import requests
 import json
@@ -85,7 +87,7 @@ def main():
         else:
             text = get_bulk_text(contexts)
     else:
-        context = dict([(var[7:], value.decode("utf-8"))
+        context = dict([(var[7:], value)
                         for (var, value) in os.environ.items()
                         if var.startswith("NOTIFY_")])
         contact_number = context["CONTACTPAGER"].replace(" ", "")
@@ -93,7 +95,7 @@ def main():
             sys.stderr.write("Contact's pager address is empty, not sending anything.\n")
             return 2
         if "PARAMETER_MAX_LENGHT" in context:
-            max_len = context["PARAMETER_MAX_LENGHT"]
+            max_len = int(context["PARAMETER_MAX_LENGHT"])
         if "PARAMETER_SUB_PATTERN" in context:
             sub_pattern = context["PARAMETER_SUB_PATTERN"]
         contact_numbers = [contact_number]
@@ -227,7 +229,7 @@ def get_bulk_text(contexts, smsHeader=None):
             message = message.format(*service_outputs)
         else:
             message = message.format(*[""]*len(service_outputs))
-    asciiMessage = message.decode("ascii", errors="ignore")
+    asciiMessage = message
     log_debug(asciiMessage+"\n")
     return message if len(message) < max_len else (message[:max_len])
 
@@ -288,8 +290,7 @@ def send_sms(user_name, api_password, account_reference, text, contact_numbers):
         "messages": messages
     }
     sys.stdout.write("Sending sms to {} with message: '{}'\n".format(
-        ', '.join(contact_numbers),
-        text.decode('ascii', 'ignore')))
+        ', '.join(contact_numbers), text))
     resp = requests.post(api_url, headers=headers, data=json.dumps(data))
     if resp.status_code == 200:
         sys.stdout.write("SMS sucessfully sent\n")
